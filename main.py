@@ -135,6 +135,7 @@ if task_id is not None:
                                     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                                         tmp_file.write(image_file.read())
                                         tmp_file.flush()
+                                        
                                         for row_id in row_ids:
                                             with open(tmp_file.name, 'rb') as file_stream:
                                                 smartsheet_client.Attachments.attach_file_to_row(st.secrets['smartsheet']['sheet_id']['submissions'], row_id, (image_file.name, file_stream, "application/octet-stream"))
