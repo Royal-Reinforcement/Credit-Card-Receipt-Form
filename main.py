@@ -3,9 +3,12 @@ import pandas as pd
 import smartsheet
 import tempfile
 
+
 st.set_page_config(page_title='Credit Card Receipts', page_icon='💳', layout='centered')
 
+
 st.image(st.secrets["logo"], width=100)
+
 
 st.title('Credit Card Receipts')
 st.info('Communication of your card swipes.')
