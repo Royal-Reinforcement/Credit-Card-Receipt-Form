@@ -10,20 +10,87 @@ st.image(st.secrets["logo"], width=100)
 st.title('Credit Card Receipts')
 st.info('Communication of your card swipes.')
 
+
 if 'receipt_submitted' not in st.session_state:
     st.session_state.receipt_submitted = False
-                            
+
+
 def is_receipt_submitted():
     st.session_state.receipt_submitted = True
 
 
-date     = None
-task_id  = None
-location = None
-card     = None
-total    = None
+def smartsheet_to_dataframe(sheet_id):
+    smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
+    sheet             = smartsheet_client.Sheets.get_sheet(sheet_id)
+    columns           = [col.title for col in sheet.columns]
+    rows              = []
+    for row in sheet.rows: rows.append([cell.value for cell in row.cells])
+    return pd.DataFrame(rows, columns=columns)
 
-date    = st.date_input('Date of Transaction', disabled=st.session_state.receipt_submitted)
+
+df_settings = smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['settings'])
+df_cards    = smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['cards'])
+
+
+date        = None
+name        = None
+department  = None
+card        = None
+task_id     = None
+location    = None
+total       = None
+
+
+date        = st.date_input('🗓️ Date of Transaction', disabled=st.session_state.receipt_submitted)
+
+
+cards       = df_cards[df_cards['Status'] == 'Active']
+names       = ['Select your name'] + cards['Employee'].sort_values().unique().tolist()
+name        = st.selectbox('🪪 Name on Card', names, disabled=st.session_state.receipt_submitted)
+
+if name != 'Select your name':
+    card_type  = cards[cards['Employee'] == name]
+    department = cards[cards['Employee'] == name]['Department'].values[0]
+        
+    if card_type.shape[0] > 1:
+        card_types = ['Select the card you used'] + card_type['Bank'].sort_values().unique().tolist()
+
+        card_choice = st.selectbox('💳 Card used', card_types, disabled=st.session_state.receipt_submitted)
+
+        if card_choice != 'Select the card you used':
+            card = card_type[card_type['Bank'] == card_choice]['Bank'].values[0]
+
+    else:
+        card = card_type['Bank'].values[0]
+
+
+    if card is not None and card != 'Select the card you used':
+        location = st.text_input('📍 Location of Transaction', value=None, placeholder='Ace Hardware, Amazon, Publix, Walmart, etc.', disabled=st.session_state.receipt_submitted)
+
+
+        if location is not None:
+            total = st.number_input('💰 **Total Amount**', value=None, step=1.00, format="%.2f", min_value=0.00, disabled=st.session_state.receipt_submitted)
+
+            if total is not None:
+
+                department_settings = df_settings[df_settings[department] == True]
+                category_options    = department_settings['Financial Code Description'].sort_values().unique()
+                categories       = st.multiselect('⚖️ **Applicable Spend Categories**', category_options, disabled=st.session_state.receipt_submitted)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 task_id = st.number_input('Breezeway Task ID', value=None, step=1, disabled=st.session_state.receipt_submitted)
 
 if task_id is not None:
