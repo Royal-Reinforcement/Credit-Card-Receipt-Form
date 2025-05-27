@@ -77,7 +77,7 @@ if name != 'Select your name':
                 category_options    = department_settings['Financial Code Description'].sort_values().unique()
                 categories       = st.multiselect('⚖️ **Applicable Spend Categories**', category_options, disabled=st.session_state.receipt_submitted)
 
-
+# TODO: Determine is categories contains a category in which Breezeway ID is required.
 
 
 
