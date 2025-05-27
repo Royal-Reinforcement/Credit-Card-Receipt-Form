@@ -141,7 +141,7 @@ if task_id is not None:
                                         tmp_file.write(image_file.read())
                                         tmp_file.flush()
 
-                                        file_name = f"{card}_{date.strftime("%Y_%m_%d")}_{department}_{location}_{name}_{task_id}.{file.type.rpartition('/')[-1]}"
+                                        file_name = f"{card}_{date.strftime("%Y_%U")}_{department}_{location}_{name}_{task_id}.{file.type.rpartition('/')[-1]}"
                                         
                                         for row_id in row_ids:
                                             with open(tmp_file.name, 'rb') as file_stream:
