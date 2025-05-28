@@ -3,6 +3,8 @@ import pandas as pd
 import smartsheet
 import tempfile
 
+import functions
+
 
 st.set_page_config(page_title='Credit Card Receipts', page_icon='💳', layout='centered')
 
@@ -14,9 +16,6 @@ st.title('Credit Card Receipts')
 st.info('Communication of your card swipes.')
 
 
-smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
-
-
 if 'receipt_submitted' not in st.session_state:
     st.session_state.receipt_submitted = False
 
@@ -25,16 +24,8 @@ def is_receipt_submitted():
     st.session_state.receipt_submitted = True
 
 
-def smartsheet_to_dataframe(sheet_id):
-    sheet             = smartsheet_client.Sheets.get_sheet(sheet_id)
-    columns           = [col.title for col in sheet.columns]
-    rows              = []
-    for row in sheet.rows: rows.append([cell.value for cell in row.cells])
-    return pd.DataFrame(rows, columns=columns)
-
-
-df_settings = smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['settings'])
-df_cards    = smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['cards'])
+df_settings = functions.smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['settings'])
+df_cards    = functions.smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['cards'])
 
 
 date             = None
@@ -152,8 +143,9 @@ if name != 'Select your name':
                                     submission_df['Card Suffix']          = submission_df['Card Suffix'].replace(r'\.0$', '', regex=True)
                                     submission_df['Financial Code Value'] = submission_df['Financial Code Value'].replace(r'\.0$', '', regex=True)
 
-                                    sheet         = smartsheet_client.Sheets.get_sheet(st.secrets['smartsheet']['sheet_id']['submissions'])
-                                    column_map    = {col.title: col.id for col in sheet.columns}
+                                    smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
+                                    sheet             = smartsheet_client.Sheets.get_sheet(st.secrets['smartsheet']['sheet_id']['submissions'])
+                                    column_map        = {col.title: col.id for col in sheet.columns}
 
                                     def submit_to_smartsheet(df):
                                         row_ids = []
