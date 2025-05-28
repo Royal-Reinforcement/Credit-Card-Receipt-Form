@@ -92,7 +92,7 @@ if name != 'Select your name':
                     amount = 0.00
 
                     st.subheader('Spend Allocation')
-                    st.info('Distribute the total amount across the selected categories.')
+                    st.info('Distribute the total amount across the selected categories. There must be a balance of $0.00 to proceed, and all categories must have a non-zero allocation.')
 
                     for category in categories:
                         amount += st.number_input(category, min_value=0.00, value=None, step=1.00, key=f"{category}_amount", placeholder=123.45, disabled=st.session_state.receipt_submitted) or 0.00
@@ -122,7 +122,6 @@ if name != 'Select your name':
 
                             if task_id is not None:
 
-                                # if st.button(f"Submit **${amount}** for **{department}**", use_container_width=True, type='primary', disabled=st.session_state.receipt_submitted):
                                 if st.button(f"Submit **${amount}** for **{department}**", use_container_width=True, type='primary', on_click=is_receipt_submitted, disabled=st.session_state.receipt_submitted):
                                     
                                     submission = []
@@ -178,7 +177,7 @@ if name != 'Select your name':
                                             tmp_file.write(image_file.read())
                                             tmp_file.flush()
 
-                                            file_name = f"{date.strftime("%Y_%U")}_{card}_{submission_df['Card Suffix'].values[0]}_{department}_{location}_{name}_{task_id}.{file.type.rpartition('/')[-1]}"
+                                            file_name = f"{date.strftime("%Y_%U")}_{card}_{submission_df['Card Suffix'].values[0]}_{location}_{department}_{name}_{task_id}.{file.type.rpartition('/')[-1]}"
                                             
                                             for row_id in row_ids:
                                                 with open(tmp_file.name, 'rb') as file_stream:
