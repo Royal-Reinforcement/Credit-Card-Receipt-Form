@@ -34,8 +34,10 @@ department       = None
 card             = None
 location         = None
 total            = None
-task_id          = None
+is_web_purchase  = None
 is_task_required = False
+task_id          = None
+home             = None
 
 
 
@@ -106,14 +108,19 @@ if name != 'Select your name':
                         if file is not None:
                             
                             if is_task_required:
-                                task_id = st.number_input('Breezeway Task ID', value=None, step=1, disabled=st.session_state.receipt_submitted)
+                                task_id = st.number_input('#️⃣ Breezeway Task ID', value=None, placeholder=1234567890, step=1, disabled=st.session_state.receipt_submitted)
+
+                                if task_id is not None:
+                                    home = st.text_input('🏠 Property', value=None, placeholder='Please provide the Unit_Code', disabled=st.session_state.receipt_submitted)
                             else:
                                 task_id = 'NOTASK'
+                                home    = 'NONE'
                             
 
-                            if task_id is not None:
+                            if task_id is not None and home is not None:
 
-                                if st.button(f"Submit **${amount}** for **{department}**", use_container_width=True, type='primary', on_click=is_receipt_submitted, disabled=st.session_state.receipt_submitted):
+                                if st.button(f"Submit **${amount}** for **{department}**", use_container_width=True, type='primary', disabled=st.session_state.receipt_submitted):
+                                # if st.button(f"Submit **${amount}** for **{department}**", use_container_width=True, type='primary', on_click=is_receipt_submitted, disabled=st.session_state.receipt_submitted):
                                     
                                     submission = []
 
@@ -122,6 +129,7 @@ if name != 'Select your name':
                                             'Submitted': pd.Timestamp.now().strftime('%m-%d-%Y %H:%M:%S'),
                                             'Date': date.strftime('%m-%d-%Y'),
                                             'Task ID': task_id,
+                                            'Property': home,
                                             'Location': location,
                                             'Employee': name,
                                             'Card Used': card,
@@ -134,9 +142,10 @@ if name != 'Select your name':
                                     submission_df = pd.DataFrame(submission)
                                     submission_df = pd.merge(submission_df, df_settings[['Financial Code Type','Financial Code Description','Financial Code Value']], on='Financial Code Description', how='left')
                                     submission_df = pd.merge(submission_df, cards, how='left', left_on=['Employee', 'Card Used', 'Department'], right_on=['Employee', 'Bank', 'Department'])
-                                    submission_df = submission_df[['Submitted','Date','Department','Employee','Bank','Suffix','Location','Total','Task ID','Financial Code Type','Financial Code Value','Financial Code Description','Allocation']]
-                                    submission_df.columns = ['Submitted','Date','Department','Employee','Card','Card Suffix','Location','Total','Task ID','Financial Code Type','Financial Code Value','Financial Code Description','Allocation']
+                                    submission_df = submission_df[['Submitted','Date','Department','Employee','Bank','Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Allocation']]
+                                    submission_df.columns = ['Submitted','Date','Department','Employee','Card','Card Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Allocation']
                                     submission_df = submission_df.astype(str)
+                                    submission_df['Reconciled?'] = False
 
                                     submission_df['Location']             = submission_df['Location'].str.upper()
                                     submission_df['Task ID']              = submission_df['Task ID'].replace(r'\.0$', '', regex=True)
