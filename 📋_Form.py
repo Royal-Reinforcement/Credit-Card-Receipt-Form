@@ -40,6 +40,7 @@ is_task_required = None
 is_web_purchase  = None
 location         = None
 name             = None
+res_num          = None
 task_id          = None
 total            = None
 
@@ -94,14 +95,14 @@ if name != 'Select your name':
 
                     if total is not None:
 
-                        department_settings = df_settings[df_settings[department] == True]
-                        category_options    = department_settings['Friendly Code Description'].sort_values().unique()
-                        categories          = st.multiselect('⚖️ Spending Categories of Transaction', category_options, disabled=st.session_state.receipt_submitted)
-                        task_required       = df_settings[df_settings['Breezeway Required']]
-                        is_task_required    = task_required['Friendly Code Description'].isin(categories).any()
-
-                        elaboration         = department_settings[(department_settings['Friendly Code Description'].isin(categories)) & (department_settings['Elaboration'])]
-
+                        department_settings   = df_settings[df_settings[department] == True]
+                        category_options      = department_settings['Friendly Code Description'].sort_values().unique()
+                        categories            = st.multiselect('⚖️ Spending Categories of Transaction', category_options, disabled=st.session_state.receipt_submitted)
+                        task_required         = df_settings[df_settings['Breezeway Required']]
+                        is_task_required      = task_required['Friendly Code Description'].isin(categories).any()
+                        res_required          = df_settings[df_settings['Reservation # Required']]
+                        is_res_required       = res_required['Friendly Code Description'].isin(categories).any()
+                        elaboration           = department_settings[(department_settings['Friendly Code Description'].isin(categories)) & (department_settings['Elaboration'])]
                         is_elaboration_needed = elaboration.shape[0] > 0
                         is_acknowledged       = False
 
@@ -147,87 +148,100 @@ if name != 'Select your name':
                                 if file is not None:
                                     
                                     if is_task_required:
-                                        task_id = st.number_input('#️⃣ Breezeway Task ID', value=None, placeholder=1234567890, step=1, disabled=st.session_state.receipt_submitted)
-
-                                        if task_id is not None:
-                                            home = st.text_input('🏠 Property', value=None, placeholder='Escapia Unit Code', disabled=st.session_state.receipt_submitted)
+                                        task_id = st.number_input('💨 Breezeway Task ID', value=None, placeholder=1234567890, step=1, disabled=st.session_state.receipt_submitted)
                                     else:
-                                        task_id = 'NOTASK'
-                                        home    = 'NONE'
+                                        task_id = ''
                                     
+                                    
+                                    if task_id is not None:
 
-                                    if task_id is not None and home is not None:
+                                        if is_res_required:
+                                            res_num = st.text_input('#️⃣ Reservation Number', value=None, placeholder='RES-12345', disabled=st.session_state.receipt_submitted)
+                                        else:
+                                            res_num    = ''
+                                        
+                                        if   task_id == '' and res_num == '': task_id = 'None'
+                                        elif task_id == '' and res_num != '': task_id = res_num
+                                        elif task_id != '' and res_num == '': task_id = task_id
+                                        else:                                 task_id = f"{task_id}; {res_num}"
+                                        
 
-                                        if st.button(f"Submit **${amount}** for **{department}**", use_container_width=True, type='primary', disabled=st.session_state.receipt_submitted):
-                                        # if st.button(f"Submit **${amount}** for **{department}**", use_container_width=True, type='primary', on_click=is_receipt_submitted, disabled=st.session_state.receipt_submitted):
-                                            
-                                            submission = []
+                                        if res_num is not None:
 
-                                            for category in categories:
-                                                submission.append({
-                                                    'Submitted': pd.Timestamp.now().strftime('%m-%d-%Y %H:%M:%S'),
-                                                    'Date': date.strftime('%m-%d-%Y'),
-                                                    'Task ID': task_id,
-                                                    'Property': home,
-                                                    'Location': location,
-                                                    'Employee': name,
-                                                    'Card Used': card,
-                                                    'Total': total,
-                                                    'Department': department,
-                                                    'Friendly Code Description': category,
-                                                    'Employee Description': description,
-                                                    'Allocation': st.session_state[f"{category}_amount"]
-                                                })
+                                            home = st.text_input('🏠 Property', value=None, placeholder='Escapia Unit Code', disabled=st.session_state.receipt_submitted)
+                                        
 
-                                            submission_df = pd.DataFrame(submission)
-                                            submission_df = pd.merge(submission_df, df_settings[['Financial Code Type','Financial Code Description','Friendly Code Description','Financial Code Value']], on='Friendly Code Description', how='left')
-                                            submission_df = pd.merge(submission_df, cards, how='left', left_on=['Employee', 'Card Used', 'Department'], right_on=['Employee', 'Bank', 'Department'])
-                                            submission_df = submission_df[['Submitted','Date','Department','Employee','Bank','Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Friendly Code Description','Employee Description','Allocation']]
-                                            submission_df.columns = ['Submitted','Date','Department','Employee','Card','Card Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Friendly Code Description','Employee Description','Allocation']
-                                            submission_df = submission_df.astype(str)
-                                            submission_df['Website?']    = is_web_purchase
-                                            submission_df['Reconciled?'] = False
+                                            if home is not None:
 
-                                            submission_df['Location']             = submission_df['Location'].str.upper()
-                                            submission_df['Task ID']              = submission_df['Task ID'].replace(r'\.0$', '', regex=True)
-                                            submission_df['Card Suffix']          = submission_df['Card Suffix'].replace(r'\.0$', '', regex=True)
-                                            submission_df['Financial Code Value'] = submission_df['Financial Code Value'].replace(r'\.0$', '', regex=True)
-
-                                            smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
-                                            sheet             = smartsheet_client.Sheets.get_sheet(st.secrets['smartsheet']['sheet_id']['submissions'])
-                                            column_map        = {col.title: col.id for col in sheet.columns}
-
-                                            def submit_to_smartsheet(df):
-                                                row_ids = []
-
-                                                for _, row_data in df.iterrows():
-
-                                                    row        = smartsheet.models.Row()
-                                                    row.to_top = True
-                                                    row.cells  = []
-
-                                                    for col in df.columns: row.cells.append({"column_id": column_map[col], "value": row_data[col]})
-
-                                                    response = smartsheet_client.Sheets.add_rows(st.secrets['smartsheet']['sheet_id']['submissions'], [row])
-
-                                                    row_ids.append(response.result[0].id)
-
-                                                return row_ids
-                                            
-                                            def attach_image_to_rows(row_ids, image_file):
-                                                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                                                    tmp_file.write(image_file.read())
-                                                    tmp_file.flush()
-
-                                                    file_name = f"{date.strftime("%Y_%U")}_{card}_{submission_df['Card Suffix'].values[0]}_{location}_{department}_{name}_{task_id}.{file.type.rpartition('/')[-1]}"
+                                                if st.button(f"Submit **${amount}** for **{department}**", use_container_width=True, type='primary', on_click=is_receipt_submitted, disabled=st.session_state.receipt_submitted):
                                                     
-                                                    for row_id in row_ids:
-                                                        with open(tmp_file.name, 'rb') as file_stream:
-                                                            smartsheet_client.Attachments.attach_file_to_row(st.secrets['smartsheet']['sheet_id']['submissions'], row_id, (file_name, file_stream, 'application/octet-stream'))
-                                            
-                                            row_ids = submit_to_smartsheet(submission_df)
-                                            attach_image_to_rows(row_ids, file)
+                                                    submission = []
 
-                                            st.balloons()
-                                            st.success('**Thank you!** Receipt submitted.', icon='🏅')
-                                            st.link_button('Submit another receipt', url=st.secrets.url_mobile, use_container_width=True, type='primary')
+                                                    for category in categories:
+                                                        submission.append({
+                                                            'Submitted': pd.Timestamp.now().strftime('%m-%d-%Y %H:%M:%S'),
+                                                            'Date': date.strftime('%m-%d-%Y'),
+                                                            'Task ID': task_id,
+                                                            'Property': home,
+                                                            'Location': location,
+                                                            'Employee': name,
+                                                            'Card Used': card,
+                                                            'Total': total,
+                                                            'Department': department,
+                                                            'Friendly Code Description': category,
+                                                            'Employee Description': description,
+                                                            'Allocation': st.session_state[f"{category}_amount"]
+                                                        })
+
+                                                    submission_df = pd.DataFrame(submission)
+                                                    submission_df = pd.merge(submission_df, df_settings[['Financial Code Type','Financial Code Description','Friendly Code Description','Financial Code Value']], on='Friendly Code Description', how='left')
+                                                    submission_df = pd.merge(submission_df, cards, how='left', left_on=['Employee', 'Card Used', 'Department'], right_on=['Employee', 'Bank', 'Department'])
+                                                    submission_df = submission_df[['Submitted','Date','Department','Employee','Bank','Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Friendly Code Description','Employee Description','Allocation']]
+                                                    submission_df.columns = ['Submitted','Date','Department','Employee','Card','Card Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Friendly Code Description','Employee Description','Allocation']
+                                                    submission_df = submission_df.astype(str)
+                                                    submission_df['Website?']    = is_web_purchase
+                                                    submission_df['Reconciled?'] = False
+
+                                                    submission_df['Location']             = submission_df['Location'].str.upper()
+                                                    submission_df['Task ID']              = submission_df['Task ID'].replace(r'\.0$', '', regex=True)
+                                                    submission_df['Card Suffix']          = submission_df['Card Suffix'].replace(r'\.0$', '', regex=True)
+                                                    submission_df['Financial Code Value'] = submission_df['Financial Code Value'].replace(r'\.0$', '', regex=True)
+
+                                                    smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
+                                                    sheet             = smartsheet_client.Sheets.get_sheet(st.secrets['smartsheet']['sheet_id']['submissions'])
+                                                    column_map        = {col.title: col.id for col in sheet.columns}
+
+                                                    def submit_to_smartsheet(df):
+                                                        row_ids = []
+
+                                                        for _, row_data in df.iterrows():
+
+                                                            row        = smartsheet.models.Row()
+                                                            row.to_top = True
+                                                            row.cells  = []
+
+                                                            for col in df.columns: row.cells.append({"column_id": column_map[col], "value": row_data[col]})
+
+                                                            response = smartsheet_client.Sheets.add_rows(st.secrets['smartsheet']['sheet_id']['submissions'], [row])
+
+                                                            row_ids.append(response.result[0].id)
+
+                                                        return row_ids
+                                                    
+                                                    def attach_image_to_rows(row_ids, image_file):
+                                                        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                                                            tmp_file.write(image_file.read())
+                                                            tmp_file.flush()
+
+                                                            file_name = f"{date.strftime("%Y_%U")}_{card}_{submission_df['Card Suffix'].values[0]}_{location}_{department}_{name}_{task_id}.{file.type.rpartition('/')[-1]}"
+                                                            
+                                                            for row_id in row_ids:
+                                                                with open(tmp_file.name, 'rb') as file_stream:
+                                                                    smartsheet_client.Attachments.attach_file_to_row(st.secrets['smartsheet']['sheet_id']['submissions'], row_id, (file_name, file_stream, 'application/octet-stream'))
+                                                    
+                                                    row_ids = submit_to_smartsheet(submission_df)
+                                                    attach_image_to_rows(row_ids, file)
+
+                                                    st.balloons()
+                                                    st.success('**Thank you!** Receipt submitted.', icon='🏅')
+                                                    st.link_button('Submit another receipt', url=st.secrets.url_mobile, use_container_width=True, type='primary')
