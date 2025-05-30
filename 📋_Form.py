@@ -252,4 +252,3 @@ if name != 'Select your name':
                                                     st.balloons()
                                                     st.success('**Thank you!** Receipt submitted.', icon='🏅')
                                                     st.link_button('Submit another receipt', url=st.secrets.url, use_container_width=True, type='primary')
-                                                    'YAY'
