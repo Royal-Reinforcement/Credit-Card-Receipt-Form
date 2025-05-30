@@ -27,14 +27,17 @@ def is_receipt_submitted():
 df_settings = functions.smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['settings'])
 df_cards    = functions.smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['cards'])
 
+df_settings.iloc[:, -8:] = df_settings.iloc[:, -8:].astype(bool)
+
 
 card             = None
 date             = None
 department       = None
 description      = None
 home             = None
-is_web_purchase  = None
+is_res_required  = None
 is_task_required = None
+is_web_purchase  = None
 location         = None
 name             = None
 task_id          = None
@@ -91,11 +94,13 @@ if name != 'Select your name':
 
                     if total is not None:
 
+                        df_settings
+
                         department_settings = df_settings[df_settings[department] == True]
-                        category_options    = department_settings['Financial Code Description'].sort_values().unique()
+                        category_options    = department_settings['Friendly Code Description'].sort_values().unique()
                         categories          = st.multiselect('⚖️ Spending Categories of Transaction', category_options, disabled=st.session_state.receipt_submitted)
                         task_required       = df_settings[df_settings['Breezeway Required']]
-                        is_task_required    = task_required['Financial Code Description'].isin(categories).any()
+                        is_task_required    = task_required['Friendly Code Description'].isin(categories).any()
 
                         if categories is not None and categories != []:
                             amount = 0.00
