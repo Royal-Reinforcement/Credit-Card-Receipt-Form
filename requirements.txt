@@ -1,4 +1,4 @@
 streamlit
 pandas
-smartsheet
 tempfile
+smartsheet-python-sdk
