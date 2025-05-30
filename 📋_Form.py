@@ -94,18 +94,37 @@ if name != 'Select your name':
 
                     if total is not None:
 
-                        df_settings
-
                         department_settings = df_settings[df_settings[department] == True]
                         category_options    = department_settings['Friendly Code Description'].sort_values().unique()
                         categories          = st.multiselect('⚖️ Spending Categories of Transaction', category_options, disabled=st.session_state.receipt_submitted)
                         task_required       = df_settings[df_settings['Breezeway Required']]
                         is_task_required    = task_required['Friendly Code Description'].isin(categories).any()
 
-                        if categories is not None and categories != []:
+                        elaboration         = department_settings[(department_settings['Friendly Code Description'].isin(categories)) & (department_settings['Elaboration'])]
+
+                        is_elaboration_needed = elaboration.shape[0] > 0
+                        is_acknowledged       = False
+
+                        if is_elaboration_needed:
+                            st.subheader('Acknowledgement')
+                            st.warning('You have chosen an often-misused category.')
+
+                            def communicate_elaborations(row):
+                                st.write(f"**{row['Friendly Code Description']}**")
+                                st.caption(f"This category is in reference to {row['Elaboration']}.")
+
+                            elaboration.apply(communicate_elaborations, axis=1)
+
+                            is_acknowledged = st.toggle('I have **reviewed** and **confirm** the select categories.')
+                        
+                        else:
+                            is_acknowledged = True
+
+                        if categories is not None and categories != [] and is_acknowledged:
                             amount = 0.00
 
-                            st.subheader('Spend Allocation', help='Distribute the **total amount** across the **selected categories**. There must be a balance of $0.00 to proceed, and all categories must have a non-zero allocation.')
+                            st.subheader('Spend Allocation', help='There must be a balance of $0.00 to proceed, and all categories must have a non-zero allocation.')
+                            st.info(f"Distribute the **total amount** across the **selected categories**.")
 
                             for category in categories:
                                 amount += st.number_input(category, min_value=0.00, value=None, step=1.00, key=f"{category}_amount", placeholder=123.45, disabled=st.session_state.receipt_submitted) or 0.00
@@ -131,7 +150,7 @@ if name != 'Select your name':
                                         task_id = st.number_input('#️⃣ Breezeway Task ID', value=None, placeholder=1234567890, step=1, disabled=st.session_state.receipt_submitted)
 
                                         if task_id is not None:
-                                            home = st.text_input('🏠 Property', value=None, placeholder='Please provide the Unit_Code', disabled=st.session_state.receipt_submitted)
+                                            home = st.text_input('🏠 Property', value=None, placeholder='Escapia Unit Code', disabled=st.session_state.receipt_submitted)
                                     else:
                                         task_id = 'NOTASK'
                                         home    = 'NONE'
@@ -155,16 +174,16 @@ if name != 'Select your name':
                                                     'Card Used': card,
                                                     'Total': total,
                                                     'Department': department,
-                                                    'Financial Code Description': category,
-                                                    'Description': description,
+                                                    'Friendly Code Description': category,
+                                                    'Employee Description': description,
                                                     'Allocation': st.session_state[f"{category}_amount"]
                                                 })
 
                                             submission_df = pd.DataFrame(submission)
-                                            submission_df = pd.merge(submission_df, df_settings[['Financial Code Type','Financial Code Description','Financial Code Value']], on='Financial Code Description', how='left')
+                                            submission_df = pd.merge(submission_df, df_settings[['Financial Code Type','Financial Code Description','Friendly Code Description','Financial Code Value']], on='Friendly Code Description', how='left')
                                             submission_df = pd.merge(submission_df, cards, how='left', left_on=['Employee', 'Card Used', 'Department'], right_on=['Employee', 'Bank', 'Department'])
-                                            submission_df = submission_df[['Submitted','Date','Department','Employee','Bank','Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Description','Allocation']]
-                                            submission_df.columns = ['Submitted','Date','Department','Employee','Card','Card Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Description','Allocation']
+                                            submission_df = submission_df[['Submitted','Date','Department','Employee','Bank','Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Friendly Code Description','Employee Description','Allocation']]
+                                            submission_df.columns = ['Submitted','Date','Department','Employee','Card','Card Suffix','Location','Total','Task ID','Property','Financial Code Type','Financial Code Value','Financial Code Description','Friendly Code Description','Employee Description','Allocation']
                                             submission_df = submission_df.astype(str)
                                             submission_df['Website?']    = is_web_purchase
                                             submission_df['Reconciled?'] = False
