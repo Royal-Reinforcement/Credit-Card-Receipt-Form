@@ -214,10 +214,10 @@ if name != 'Select your name':
                                                     sheet             = smartsheet_client.Sheets.get_sheet(st.secrets['smartsheet']['sheet_id']['submissions'])
                                                     column_map        = {col.title: col.id for col in sheet.columns}
                                                     
-                                                    
-                                                    def submit_to_smartsheet(df):
-                                                        rows = []
 
+                                                    def submit_to_smartsheet_with_attachments(df, image_file):
+
+                                                        rows = []
                                                         for _, row_data in df.iterrows():
                                                             row = smartsheet.models.Row()
                                                             row.to_top = True
@@ -227,26 +227,27 @@ if name != 'Select your name':
                                                             ]
                                                             rows.append(row)
 
-                                                        response = smartsheet_client.Sheets.add_rows(st.secrets['smartsheet']['sheet_id']['submissions'], rows)
-                                                        row_ids  = [r.id for r in response.result]
+                                                        response  = smartsheet_client.Sheets.add_rows(st.secrets['smartsheet']['sheet_id']['submissions'], rows)
+                                                        row_ids   = [r.id for r in response.result]
 
-                                                        return row_ids
+                                                        extension = image_file.type.rpartition('/')[-1]
+                                                        file_name = f"{date.strftime('%Y_%U')}_{card}_{submission_df['Card Suffix'].values[0]}_{location}_{department}_{name}_{task_id}.{extension}"
 
-
-                                                    def attach_image_to_rows(row_ids, image_file):
-                                                        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                                                        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{extension}") as tmp_file:
                                                             tmp_file.write(image_file.read())
-                                                            tmp_file.flush()
+                                                            tmp_file_path = tmp_file.name
 
-                                                            file_name = f"{date.strftime("%Y_%U")}_{card}_{submission_df['Card Suffix'].values[0]}_{location}_{department}_{name}_{task_id}.{file.type.rpartition('/')[-1]}"
-                                                            
-                                                            for row_id in row_ids:
-                                                                with open(tmp_file.name, 'rb') as file_stream:
-                                                                    smartsheet_client.Attachments.attach_file_to_row(st.secrets['smartsheet']['sheet_id']['submissions'], row_id, (file_name, file_stream, 'application/octet-stream'))
+                                                        for row_id in row_ids:
+                                                            with open(tmp_file_path, 'rb') as file_stream:
+                                                                smartsheet_client.Attachments.attach_file_to_row(
+                                                                    st.secrets['smartsheet']['sheet_id']['submissions'],
+                                                                    row_id,
+                                                                    (file_name, file_stream, 'application/octet-stream')
+                                                                )
+
                                                     
                                                     with st.spinner('Submitting...', show_time=True):
-                                                        row_ids = submit_to_smartsheet(submission_df)
-                                                        attach_image_to_rows(row_ids, file)
+                                                        row_ids = submit_to_smartsheet_with_attachments(submission_df, file)
 
                                                     st.balloons()
                                                     st.success('**Thank you!** Receipt submitted.', icon='🏅')
