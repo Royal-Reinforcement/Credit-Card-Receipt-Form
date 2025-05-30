@@ -3,7 +3,28 @@ import pandas as pd
 import smartsheet
 import tempfile
 
-import functions
+# import functions
+
+def smartsheet_to_dataframe(sheet_id):
+    smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
+    sheet             = smartsheet_client.Sheets.get_sheet(sheet_id)
+    columns           = [col.title for col in sheet.columns]
+    rows              = []
+    for row in sheet.rows: rows.append([cell.value for cell in row.cells])
+    return pd.DataFrame(rows, columns=columns)
+
+def smartsheet_to_dataframe_with_row_ids(sheet_id):
+    smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
+    sheet             = smartsheet_client.Sheets.get_sheet(sheet_id)
+    columns           = [col.title for col in sheet.columns]
+    rows              = []
+    row_ids           = []
+    for row in sheet.rows:
+        row_ids.append(row.id)
+        rows.append([cell.value for cell in row.cells])
+    df = pd.DataFrame(rows, columns=columns)
+    df['row_id'] = row_ids
+    return df
 
 
 st.set_page_config(page_title='Credit Card Receipts', page_icon='💳', layout='centered')
@@ -24,8 +45,8 @@ def is_receipt_submitted():
     st.session_state.receipt_submitted = True
 
 
-df_settings = functions.smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['settings'])
-df_cards    = functions.smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['cards'])
+df_settings = smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['settings'])
+df_cards    = smartsheet_to_dataframe(st.secrets['smartsheet']['sheet_id']['cards'])
 
 df_settings.iloc[:, -8:] = df_settings.iloc[:, -8:].astype(bool)
 

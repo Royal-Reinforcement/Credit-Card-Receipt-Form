@@ -6,7 +6,28 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-import functions
+# import functions
+
+def smartsheet_to_dataframe(sheet_id):
+    smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
+    sheet             = smartsheet_client.Sheets.get_sheet(sheet_id)
+    columns           = [col.title for col in sheet.columns]
+    rows              = []
+    for row in sheet.rows: rows.append([cell.value for cell in row.cells])
+    return pd.DataFrame(rows, columns=columns)
+
+def smartsheet_to_dataframe_with_row_ids(sheet_id):
+    smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
+    sheet             = smartsheet_client.Sheets.get_sheet(sheet_id)
+    columns           = [col.title for col in sheet.columns]
+    rows              = []
+    row_ids           = []
+    for row in sheet.rows:
+        row_ids.append(row.id)
+        rows.append([cell.value for cell in row.cells])
+    df = pd.DataFrame(rows, columns=columns)
+    df['row_id'] = row_ids
+    return df
 
 
 st.set_page_config(page_title='Credit Card Receipts', page_icon='💳', layout='centered')
@@ -19,10 +40,10 @@ st.title('Receipt Submissions')
 st.info('Review your already-submitted receipts here.')
 
 
-df_submissions = functions.smartsheet_to_dataframe_with_row_ids(st.secrets['smartsheet']['sheet_id']['submissions'])
+df_submissions = smartsheet_to_dataframe_with_row_ids(st.secrets['smartsheet']['sheet_id']['submissions'])
 df_submissions = df_submissions.dropna(subset=['Employee'])
 
-df_cards = functions.smartsheet_to_dataframe_with_row_ids(st.secrets['smartsheet']['sheet_id']['cards'])
+df_cards = smartsheet_to_dataframe_with_row_ids(st.secrets['smartsheet']['sheet_id']['cards'])
 df_cards['Suffix']   = df_cards['Suffix'].astype(str)
 df_cards['Suffix']   = df_cards['Suffix'].replace(r'\.0$', '', regex=True)
 df_cards['Password'] = df_cards['Suffix'].str[-4:]
