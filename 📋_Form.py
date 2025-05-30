@@ -213,23 +213,6 @@ if name != 'Select your name':
                                                     smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
                                                     sheet             = smartsheet_client.Sheets.get_sheet(st.secrets['smartsheet']['sheet_id']['submissions'])
                                                     column_map        = {col.title: col.id for col in sheet.columns}
-
-                                                    # def submit_to_smartsheet(df):
-                                                    #     row_ids = []
-
-                                                    #     for _, row_data in df.iterrows():
-
-                                                    #         row        = smartsheet.models.Row()
-                                                    #         row.to_top = True
-                                                    #         row.cells  = []
-
-                                                    #         for col in df.columns: row.cells.append({"column_id": column_map[col], "value": row_data[col]})
-
-                                                    #         response = smartsheet_client.Sheets.add_rows(st.secrets['smartsheet']['sheet_id']['submissions'], [row])
-
-                                                    #         row_ids.append(response.result[0].id)
-
-                                                    #     return row_ids
                                                     
                                                     
                                                     def submit_to_smartsheet(df):
