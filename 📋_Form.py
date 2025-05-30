@@ -116,7 +116,7 @@ if name != 'Select your name':
 
                             elaboration.apply(communicate_elaborations, axis=1)
 
-                            is_acknowledged = st.toggle('I have **reviewed** and **confirm** the select categories.')
+                            is_acknowledged = st.toggle('I have **reviewed** and **confirm** the selected categories are correct.')
                         
                         else:
                             is_acknowledged = True
@@ -125,7 +125,7 @@ if name != 'Select your name':
                             amount = 0.00
 
                             st.subheader('Spend Allocation', help='There must be a balance of $0.00 to proceed, and all categories must have a non-zero allocation.')
-                            st.info(f"Distribute the **total amount** across the **selected categories**.")
+                            st.info(f"Distribute the **total amount from receipt** across the selected **spending categories**.")
 
                             for category in categories:
                                 amount += st.number_input(category, min_value=0.00, value=None, step=1.00, key=f"{category}_amount", placeholder=123.45, disabled=st.session_state.receipt_submitted) or 0.00
@@ -168,7 +168,10 @@ if name != 'Select your name':
 
                                         if res_num is not None:
 
-                                            home = st.text_input('🏠 Property', value=None, placeholder='Escapia Unit Code', disabled=st.session_state.receipt_submitted)
+                                            if task_id != 'None':
+                                                home = st.text_input('🏠 Property', value=None, placeholder='Escapia Unit Code', disabled=st.session_state.receipt_submitted)
+                                            else:
+                                                home = 'None'
                                         
 
                                             if home is not None:
