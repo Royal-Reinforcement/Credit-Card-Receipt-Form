@@ -137,7 +137,7 @@ if name != 'Select your name':
 
                             elaboration.apply(communicate_elaborations, axis=1)
 
-                            is_acknowledged = st.toggle('I have **reviewed** and **confirm** the selected categories are correct.')
+                            is_acknowledged = st.toggle('I have **reviewed** and **confirm** the selected categories are correct.', disabled=st.session_state.receipt_submitted)
                         
                         else:
                             is_acknowledged = True
