@@ -203,7 +203,7 @@ if name != 'Select your name':
 
                                                     for category in categories:
                                                         submission.append({
-                                                            'Submitted': pd.Timestamp.now().strftime('%m-%d-%Y %H:%M:%S'),
+                                                            'Submitted': pd.Timestamp.now(tz='America/Chicago').strftime('%m-%d-%Y %H:%M:%S'),
                                                             'Date': date.strftime('%m-%d-%Y'),
                                                             'Task ID': task_id,
                                                             'Property': home,
