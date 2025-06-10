@@ -149,7 +149,7 @@ if name != 'Select your name':
                             st.info(f"Distribute the **total amount from receipt** across the selected **spending categories**.")
 
                             for category in categories:
-                                amount += st.number_input(category, min_value=0.00, value=None, step=1.00, key=f"{category}_amount", placeholder=123.45, disabled=st.session_state.receipt_submitted) or 0.00
+                                amount += st.number_input(category, value=None, step=1.00, key=f"{category}_amount", placeholder=123.45, disabled=st.session_state.receipt_submitted) or 0.00
                         
                             amount = round(amount, 2)
                             
