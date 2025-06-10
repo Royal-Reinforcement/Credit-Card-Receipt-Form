@@ -112,7 +112,7 @@ if name != 'Select your name':
 
                 if description is not None:
                 
-                    total = st.number_input('💰 Total Amount from Receipt', value=None, step=1.00, format="%.2f", min_value=0.00, placeholder=1234.56, disabled=st.session_state.receipt_submitted)
+                    total = st.number_input('💰 Total Amount from Receipt', value=None, step=1.00, format="%.2f", placeholder=1234.56, disabled=st.session_state.receipt_submitted)
 
                     if total is not None:
 
