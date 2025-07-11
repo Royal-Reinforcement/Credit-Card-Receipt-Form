@@ -5,6 +5,7 @@ import tempfile
 
 # import functions
 
+@st.cache_data
 def smartsheet_to_dataframe(sheet_id):
     smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
     sheet             = smartsheet_client.Sheets.get_sheet(sheet_id)
@@ -12,6 +13,7 @@ def smartsheet_to_dataframe(sheet_id):
     rows              = []
     for row in sheet.rows: rows.append([cell.value for cell in row.cells])
     return pd.DataFrame(rows, columns=columns)
+
 
 def smartsheet_to_dataframe_with_row_ids(sheet_id):
     smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
