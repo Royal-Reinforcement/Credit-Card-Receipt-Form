@@ -5,7 +5,7 @@ import tempfile
 
 # import functions
 
-@st.cache_data
+@st.cache_data(ttl=300)
 def smartsheet_to_dataframe(sheet_id):
     smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
     sheet             = smartsheet_client.Sheets.get_sheet(sheet_id)
