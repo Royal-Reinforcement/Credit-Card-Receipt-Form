@@ -6,9 +6,6 @@ import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
-from PIL import Image
-from io import BytesIO
-
 # import functions
 
 def smartsheet_to_dataframe(sheet_id):
