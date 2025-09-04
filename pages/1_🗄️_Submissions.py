@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import smartsheet
 import requests
+import os
+import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 from PIL import Image
 from io import BytesIO
@@ -66,13 +69,63 @@ if name != 'Select your name':
         if password in passwords:
 
             submissions = df_submissions[df_submissions['Employee'] == name]
+            submissions = submissions.sort_values(by='Submitted', ascending=False)
     
             st.subheader('💳 Transactions')
-            st.dataframe(submissions.drop(columns='row_id'), use_container_width=True, hide_index=True)
+            st.dataframe(submissions.drop(columns=['row_id','Reconciled?']), use_container_width=True, hide_index=True)
 
             st.subheader('🧾 Receipts')
-    
-            st.success('Coming soon!')
+
+            smartsheet_client = smartsheet.Smartsheet(st.secrets['smartsheet']['access_token'])
+
+            def download_attachment_to_temp(att_obj):
+                file_ext = os.path.splitext(att_obj.name)[1].lower()
+                tmpdir = tempfile.TemporaryDirectory()
+                smartsheet_client.Attachments.download_attachment(att_obj, tmpdir.name)
+                filepath = os.path.join(tmpdir.name, att_obj.name)
+                return filepath, file_ext, tmpdir
+
+            def gather_attachments_for_rows(sheet_id, row_ids):
+                all_attachments = []
+                for row_id in row_ids:
+                    attachments_meta = smartsheet_client.Attachments.list_row_attachments(sheet_id, row_id).data
+                    for att_meta in attachments_meta:
+                        att_obj = smartsheet_client.Attachments.get_attachment(sheet_id, att_meta.id)
+                        all_attachments.append(att_obj)
+                return all_attachments
+
+            def show_attachments(sheet_id, row_ids):
+                attachments = gather_attachments_for_rows(sheet_id, row_ids)
+
+                temp_dirs = []
+                with ThreadPoolExecutor(max_workers=5) as executor:
+                    results = list(executor.map(download_attachment_to_temp, attachments))
+                    for i, (filepath, file_ext, tmpdir) in enumerate(results):
+                        temp_dirs.append(tmpdir)
+
+                        with st.expander(f"{os.path.basename(filepath)}", expanded=False):
+                            if file_ext == ".pdf":
+                                st.pdf(filepath)
+                            else:
+                                st.image(filepath, use_container_width=True)
+
+
+            today           = pd.to_datetime('today').date()
+            minus_30_days   = today - pd.Timedelta(days=30)
+
+            dates = st.date_input('Submitted dates:', value=(minus_30_days, today))
+
+            if st.button('View Receipts', type='primary', use_container_width=True):
+                if len(dates) == 2:
+                    start_date, end_date = dates
+                    mask = (pd.to_datetime(submissions['Submitted']).dt.date >= start_date) & (pd.to_datetime(submissions['Submitted']).dt.date <= end_date)
+                    submissions = submissions[mask]
+
+                with st.spinner('Fetching receipts...'):
+                    show_attachments(st.secrets['smartsheet']['sheet_id']['submissions'], submissions['row_id'].head(10).tolist())
+
+
+
         
         else:
 
