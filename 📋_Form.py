@@ -114,7 +114,7 @@ if name != 'Select your name':
 
                 if description is not None:
                 
-                    total = st.number_input('💰 Total Amount from Receipt', value=None, step=1.00, format="%.2f", placeholder=1234.56, disabled=st.session_state.receipt_submitted)
+                    total = st.number_input('💰 Total Amount from Receipt', value=None, step=0.01, format="%.2f", placeholder=1234.56, disabled=st.session_state.receipt_submitted)
 
                     if total is not None:
 
@@ -151,7 +151,7 @@ if name != 'Select your name':
                             st.info(f"Distribute the **total amount from receipt** across the selected **spending categories**.")
 
                             for category in categories:
-                                amount += st.number_input(category, value=None, step=1.00, key=f"{category}_amount", placeholder=123.45, disabled=st.session_state.receipt_submitted) or 0.00
+                                amount += st.number_input(category, value=None, step=0.01, key=f"{category}_amount", placeholder=123.45, disabled=st.session_state.receipt_submitted) or 0.00
                         
                             amount = round(amount, 2)
                             
