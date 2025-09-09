@@ -113,10 +113,16 @@ if name != 'Select your name':
                 description = st.text_input('🛒 What was purchased?', value=None, placeholder='Briefly describe the item(s).')
 
                 if description is not None:
-                
-                    total = st.number_input('💰 Total Amount from Receipt', value=None, step=0.01, format="%.2f", placeholder=1234.56, disabled=st.session_state.receipt_submitted)
 
-                    if total is not None:
+                    total_input = st.text_input("💰 Total Amount from Receipt", placeholder="1234.56")
+
+                    try:
+                        total = float(total_input) if total_input else None
+                    except ValueError:
+                        st.warning("Please enter a valid number.")
+                        total = None
+
+                    if total is not None and total != 0.00:
 
                         department_settings   = df_settings[df_settings[department] == True]
                         category_options      = department_settings['Friendly Code Description'].sort_values().unique()
@@ -151,7 +157,17 @@ if name != 'Select your name':
                             st.info(f"Distribute the **total amount from receipt** across the selected **spending categories**.")
 
                             for category in categories:
-                                amount += st.number_input(category, value=None, step=0.01, key=f"{category}_amount", placeholder=123.45, disabled=st.session_state.receipt_submitted) or 0.00
+
+                                amount_input = st.text_input(category, placeholder="1234.56")
+
+                                try:
+                                    float_amount = float(amount_input) if amount_input else 0.00
+                                except ValueError:
+                                    st.warning("Please enter a valid number.")
+                                    float_amount = 0.00
+                                    
+                                st.session_state[f"{category}_amount"] = float_amount
+                                amount += float_amount or 0.00
                         
                             amount = round(amount, 2)
                             
