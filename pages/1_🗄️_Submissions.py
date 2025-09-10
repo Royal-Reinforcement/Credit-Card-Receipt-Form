@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import smartsheet
-import requests
 import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -69,7 +68,7 @@ if name != 'Select your name':
             submissions = submissions.sort_values(by='Submitted', ascending=False)
     
             st.subheader('💳 Transactions')
-            st.dataframe(submissions.drop(columns=['row_id','Reconciled?']), use_container_width=True, hide_index=True)
+            st.dataframe(submissions.drop(columns=['row_id','Reconciled?']), width='stretch', hide_index=True)
 
             st.subheader('🧾 Receipts')
 
@@ -100,11 +99,12 @@ if name != 'Select your name':
                     for i, (filepath, file_ext, tmpdir) in enumerate(results):
                         temp_dirs.append(tmpdir)
 
-                        with st.expander(f"{os.path.basename(filepath)}", expanded=False):
-                            if file_ext == ".pdf":
-                                st.pdf(filepath)
-                            else:
-                                st.image(filepath, use_container_width=True)
+                        st.caption(f'{os.path.basename(filepath)}')
+                        if file_ext == ".pdf":
+                            st.caption('')
+                            st.pdf(filepath, height='stretch', key=f'pdf_{i}')
+                        else:
+                            st.image(filepath, width='stretch')
 
 
             today           = pd.to_datetime('today').date()
@@ -112,14 +112,14 @@ if name != 'Select your name':
 
             dates = st.date_input('Submitted dates:', value=(minus_30_days, today))
 
-            if st.button('View Receipts', type='primary', use_container_width=True):
+            if st.button('View Receipts', type='primary', width='stretch'):
                 if len(dates) == 2:
                     start_date, end_date = dates
                     mask = (pd.to_datetime(submissions['Submitted']).dt.date >= start_date) & (pd.to_datetime(submissions['Submitted']).dt.date <= end_date)
                     submissions = submissions[mask]
 
                 with st.spinner('Fetching receipts...'):
-                    show_attachments(st.secrets['smartsheet']['sheet_id']['submissions'], submissions['row_id'].head(10).tolist())
+                    show_attachments(st.secrets['smartsheet']['sheet_id']['submissions'], submissions['row_id'].tolist())
 
 
 
