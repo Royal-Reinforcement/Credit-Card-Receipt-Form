@@ -1,3 +1,4 @@
 streamlit
+streamlit[pdf]
 pandas
 smartsheet-python-sdk
