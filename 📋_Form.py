@@ -132,7 +132,7 @@ if name != 'Select your name':
                         res_required          = df_settings[df_settings['Reservation # Required']]
                         is_res_required       = res_required['Friendly Code Description'].isin(categories).any()
                         elaboration           = department_settings[(department_settings['Friendly Code Description'].isin(categories)) & (department_settings['Elaboration'])]
-                        is_elaboration_needed = elaboration.shape[0] > 0
+                        is_elaboration_needed = not elaboration.empty
                         is_acknowledged       = False
 
                         if is_elaboration_needed:
